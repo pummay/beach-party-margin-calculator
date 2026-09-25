@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111111">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Margin Calc">
+  <title>Beach Party Margin Calculator</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f4f4f5; color: #18181b;
+      min-height: 100vh; padding: max(24px, env(safe-area-inset-top)) 16px 30px;
+    }
+    .app { max-width: 520px; margin: 0 auto; }
+    h1 { font-size: 27px; margin: 8px 0 4px; }
+    .sub { color: #71717a; margin: 0 0 22px; }
+    .card { background: white; border-radius: 18px; padding: 18px; margin-bottom: 14px; box-shadow: 0 1px 8px #00000012; }
+    label { display:block; font-size: 14px; font-weight: 650; margin-bottom: 7px; }
+    input {
+      width:100%; font-size:20px; padding:14px; border:1px solid #d4d4d8;
+      border-radius:12px; margin-bottom:16px; background:#fff;
+    }
+    .buttons { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
+    button {
+      min-height:48px; border:1px solid #d4d4d8; background:white; border-radius:12px;
+      font-size:16px; font-weight:700;
+    }
+    button.active { background:#18181b; color:white; border-color:#18181b; }
+    .price { font-size:42px; font-weight:800; letter-spacing:-1px; margin:5px 0 16px; }
+    .resultrow { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .mini { background:#f4f4f5; border-radius:12px; padding:12px; }
+    .mini span { display:block; color:#71717a; font-size:12px; margin-bottom:4px; }
+    .mini strong { font-size:20px; }
+    .note { font-size:12px; color:#71717a; line-height:1.4; }
+    .error { color:#b91c1c; font-size:13px; min-height:18px; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <h1>Beach Party Margin Calculator</h1>
+  <p class="sub">Case cost → cost per pack → selling price</p>
+
+  <div class="card">
+    <label for="caseCost">Case Cost ($)</label>
+    <input id="caseCost" type="number" inputmode="decimal" min="0.01" step="0.01" value="30.10">
+
+    <label for="packs">Packs Per Case</label>
+    <input id="packs" type="number" inputmode="numeric" min="1" step="1" value="2">
+
+    <label>Gross Margin</label>
+    <div class="buttons">
+      <button type="button" data-margin="25">25%</button>
+      <button type="button" data-margin="30">30%</button>
+      <button type="button" data-margin="35" class="active">35%</button>
+      <button type="button" data-margin="40">40%</button>
+    </div>
+
+    <label for="custom">Custom Margin (%)</label>
+    <input id="custom" type="number" inputmode="decimal" min="0" max="99" step="0.1" placeholder="Optional">
+    <div id="error" class="error"></div>
+  </div>
+
+  <div class="card">
+    <div style="color:#71717a;font-size:14px">Selling Price Per Pack at <strong id="marginLabel">35%</strong></div>
+    <div id="price" class="price">$23.15</div>
+    <div class="resultrow">
+      <div class="mini"><span>Cost Per Pack</span><strong id="cost">$15.05</strong></div>
+      <div class="mini"><span>Profit Per Pack</span><strong id="profit">$8.10</strong></div>
+    </div>
+  </div>
+
+  <p class="note">Uses true gross margin: Selling price = cost per pack ÷ (1 − margin). Works offline after the page is loaded/saved by your browser.</p>
+</div>
+
+<script>
+(() => {
+  const caseCost = document.getElementById('caseCost');
+  const packs = document.getElementById('packs');
+  const custom = document.getElementById('custom');
+  const buttons = [...document.querySelectorAll('[data-margin]')];
+  const price = document.getElementById('price');
+  const cost = document.getElementById('cost');
+  const profit = document.getElementById('profit');
+  const marginLabel = document.getElementById('marginLabel');
+  const error = document.getElementById('error');
+  let selectedMargin = 35;
+
+  const money = n => '$' + n.toFixed(2);
+
+  function updateButtons() {
+    buttons.forEach(b => b.classList.toggle(
+      'active',
+      custom.value.trim() === '' && Number(b.dataset.margin) === selectedMargin
+    ));
+  }
+
+  function calculate() {
+    const c = Number(caseCost.value);
+    const p = Number(packs.value);
+    const m = custom.value.trim() === '' ? selectedMargin : Number(custom.value);
+
+    if (!(c > 0) || !(p >= 1) || !(m >= 0 && m < 100)) {
+      price.textContent = cost.textContent = profit.textContent = '—';
+      error.textContent = 'Enter a valid cost, pack count, and margin below 100%.';
+      return;
+    }
+
+    error.textContent = '';
+    const unitCost = c / p;
+    const sell = unitCost / (1 - m / 100);
+    cost.textContent = money(unitCost);
+    price.textContent = money(sell);
+    profit.textContent = money(sell - unitCost);
+    marginLabel.textContent = (Math.round(m * 10) / 10) + '%';
+    updateButtons();
+  }
+
+  buttons.forEach(b => b.addEventListener('click', () => {
+    selectedMargin = Number(b.dataset.margin);
+    custom.value = '';
+    calculate();
+  }));
+  [caseCost, packs, custom].forEach(el => el.addEventListener('input', calculate));
+  calculate();
+})();
+</script>
+</body>
+</html>
